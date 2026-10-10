@@ -1,0 +1,151 @@
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { SCHEMA_VERSION, toFlatJson, toMarkdown, toNestedJson, type ExportRecord, type FetchReport } from "../src/core/index.js";
+import { Library } from "../src/library";
+import { createServer } from "../src/server";
+
+// Exports are written with the extension's own serialisers, so these tests fail if the
+// file format and the MCP reader ever drift apart.
+
+const now = "2026-10-10T12:00:00.000Z";
+const ago = (hours: number) => new Date(Date.parse(now) - hours * 3_600_000).toISOString();
+
+function thread(id: string, title: string, bodies: Array<[string, string | null, number | null, string]>, fetchedAt = now) {
+  const base = {
+    schema_version: SCHEMA_VERSION,
+    source: "reddit" as const,
+    thread_id: id,
+    thread_title: title,
+    subreddit: "smallbusiness",
+    score_hidden: false,
+    edited_utc: null,
+    is_op: false,
+    comment_state: "normal" as const,
+  };
+  const records: ExportRecord[] = [
+    { ...base, record_type: "post", comment_id: null, parent_id: null, depth: null, score: 50, created_utc: ago(48), body: "# Which CRM?\nWe are four people.", permalink: `https://www.reddit.com/r/smallbusiness/comments/${id}/` } as ExportRecord,
+  ];
+  const depth = new Map<string, number>();
+  for (const [commentId, parent, score, body] of bodies) {
+    const level = parent ? (depth.get(parent) ?? 0) + 1 : 0;
+    depth.set(commentId, level);
+    records.push({ ...base, record_type: "comment", comment_id: commentId, parent_id: parent ?? id, depth: level, score, created_utc: ago(24), body, permalink: `https://www.reddit.com/r/smallbusiness/comments/${id}/_/${commentId}/` } as ExportRecord);
+  }
+  const report: FetchReport = { fetched: bodies.length, knownUnfetched: 0, reported: bodies.length, status: "all_known_fetched", stopReason: null, path: "json", requests: 1, fetchedAt };
+  return { records, report };
+}
+
+const crm = thread("crm1", "Which CRM do small teams actually stick with?", [
+  ["a1", null, 214, "We left our CRM after the renewal doubled."],
+  ["a2", "a1", 88, "Ask for the year-two price in writing."],
+  ["a3", "a2", 31, "The export button was the first thing they hid."],
+  ["a4", null, null, "Email sync is what made us stay. Renewal was fine."],
+]);
+const pricing = thread("price1", "Raising prices as a freelancer", [["b1", null, 12, "I raised my renewal rate by 20% and nobody left."]]);
+const crmOlder = thread("crm1", "Which CRM do small teams actually stick with?", [["a1", null, 1, "old copy"]], ago(72));
+
+let dir: string;
+let client: Client;
+
+async function call(name: string, args: Record<string, unknown> = {}) {
+  const result = (await client.callTool({ name, arguments: args })) as { content: Array<{ text: string }>; isError?: boolean };
+  return { text: result.content[0]!.text, isError: Boolean(result.isError) };
+}
+
+beforeAll(async () => {
+  dir = mkdtempSync(join(tmpdir(), "cs-mcp-"));
+  writeFileSync(join(dir, "which-crm.json"), toFlatJson([crm]));
+  mkdirSync(join(dir, "project"));
+  writeFileSync(join(dir, "project", "pricing.json"), toNestedJson([pricing]));
+  writeFileSync(join(dir, "which-crm-old.json"), toFlatJson([crmOlder]));
+  writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "not-an-export" }));
+  writeFileSync(join(dir, "broken.json"), '{"schema_version": 1, "generator": "Comment Scraper", "threads": [');
+  const server = createServer(new Library([dir]));
+  const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+  await server.connect(serverSide);
+  client = new Client({ name: "test", version: "1.0.0" });
+  await client.connect(clientSide);
+});
+
+afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+describe("comment-scraper-mcp", () => {
+  it("offers four read-only tools", async () => {
+    const { tools } = await client.listTools();
+    expect(tools.map((tool) => tool.name).sort()).toEqual(["get_comment", "list_threads", "read_thread", "search_comments"]);
+    expect(tools.every((tool) => tool.annotations?.readOnlyHint)).toBe(true);
+  });
+
+  it("lists flat and nested exports, newest copy only, and ignores other JSON", async () => {
+    const { text } = await call("list_threads");
+    expect(text).toContain("2 exported threads");
+    expect(text).toContain("reddit:crm1");
+    expect(text).toContain("reddit:price1");
+    expect(text).toContain("1 older export of this thread ignored");
+    expect(text).not.toContain("old copy");
+  });
+
+  it("numbers comments exactly like the extension's Markdown export", async () => {
+    const { text } = await call("read_thread", { thread: "reddit:crm1" });
+    const markdown = toMarkdown(crm.records, crm.report);
+    for (const line of ["[c1] (score 214, 1d ago)", "[c2] reply to [c1] (score 88, 1d ago)", "[c3] reply to [c2] (score 31, 1d ago)", "[c4] (score hidden, 1d ago)"]) {
+      expect(text).toContain(line);
+      expect(markdown).toContain(line);
+    }
+    expect(text).toContain("\\# Which CRM?");
+    expect(text).toContain("That's the end of the thread.");
+  });
+
+  it("pages long threads and filters by score", async () => {
+    const first = await call("read_thread", { thread: "which crm", limit: 2 });
+    expect(first.text).toContain("Showing comments 1–2 of 4. Call read_thread again with offset=2");
+    const second = await call("read_thread", { thread: "which crm", offset: 2, limit: 2 });
+    expect(second.text).toContain("[c3]");
+    expect(second.text).not.toContain("## Post");
+    const popular = await call("read_thread", { thread: "which crm", min_score: 80 });
+    expect(popular.text).toContain("of 2 with score ≥ 80");
+    expect(popular.text).not.toContain("[c4]");
+  });
+
+  it("searches all threads for comments containing every word, highest score first", async () => {
+    const { text } = await call("search_comments", { query: "renewal" });
+    expect(text).toContain("3 matching comments");
+    expect(text.indexOf("[c1], score 214")).toBeLessThan(text.indexOf("[c1], score 12"));
+    const both = await call("search_comments", { query: "renewal fine" });
+    expect(both.text).toContain("1 matching comment");
+    expect(both.text).toContain("[c4], score hidden");
+  });
+
+  it("returns a comment with the replies above and below it", async () => {
+    const { text } = await call("get_comment", { thread: "reddit:crm1", comment: "[c2]" });
+    expect(text.indexOf("## Replying to")).toBeLessThan(text.indexOf("[c1] (score 214"));
+    expect(text).toContain("## The comment\n\n[c2] reply to [c1]");
+    expect(text).toContain("## Direct replies (1)");
+    const missing = await call("get_comment", { thread: "reddit:crm1", comment: "c99" });
+    expect(missing.isError).toBe(true);
+    expect(missing.text).toContain("c1 to c4");
+  });
+
+  it("asks for a specific id when a title matches several threads", async () => {
+    const { text, isError } = await call("read_thread", { thread: "r" });
+    expect(isError).toBe(true);
+    expect(text).toContain("matches 2 threads");
+  });
+
+  it("explains how to export when the folder has no exports", async () => {
+    const empty = mkdtempSync(join(tmpdir(), "cs-mcp-empty-"));
+    const server = createServer(new Library([empty]));
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+    await server.connect(serverSide);
+    const other = new Client({ name: "test", version: "1.0.0" });
+    await other.connect(clientSide);
+    const result = (await other.callTool({ name: "list_threads", arguments: {} })) as { content: Array<{ text: string }> };
+    expect(result.content[0]!.text).toContain("No Comment Scraper exports found");
+    expect(result.content[0]!.text).toContain("--dir");
+    rmSync(empty, { recursive: true, force: true });
+  });
+});
