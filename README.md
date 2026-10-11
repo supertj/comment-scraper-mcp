@@ -35,6 +35,14 @@ claude mcp add comment-scraper -- npx -y comment-scraper-mcp
 
 Restart Claude Desktop afterwards. Other MCP clients (Cursor, Windsurf and so on) take the same command: `npx -y comment-scraper-mcp`.
 
+**As a Claude Code plugin**: the [`plugin`](plugin) folder bundles the server, pinned to a release, with a skill that tells Claude how to cite comments. This repository doubles as a plugin marketplace:
+
+```sh
+claude plugin install comment-scraper --marketplace supertj/comment-scraper-mcp
+```
+
+Use the plugin or `claude mcp add`, not both, or Claude sees every tool twice.
+
 ## Where it looks
 
 By default it reads your Downloads folder and the folders directly inside it, so moving exports into a project folder there is fine. To read somewhere else, pass one or more folders:

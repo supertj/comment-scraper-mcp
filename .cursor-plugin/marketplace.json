@@ -1,0 +1,16 @@
+{
+  "name": "comment-scraper",
+  "owner": {
+    "name": "Comment Scraper",
+    "email": "hello@comment-scraper.com"
+  },
+  "metadata": {
+    "description": "The Comment Scraper plugin: read your Reddit and Hacker News exports from Cursor."
+  },
+  "plugins": [
+    {
+      "name": "comment-scraper",
+      "source": "./plugin"
+    }
+  ]
+}

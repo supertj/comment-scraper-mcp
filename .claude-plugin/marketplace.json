@@ -1,0 +1,14 @@
+{
+  "name": "comment-scraper",
+  "description": "The Comment Scraper plugin: read your Reddit and Hacker News exports from Claude.",
+  "owner": {
+    "name": "Comment Scraper",
+    "email": "hello@comment-scraper.com"
+  },
+  "plugins": [
+    {
+      "name": "comment-scraper",
+      "source": "./plugin"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "comment-scraper": {
+      "command": "npx",
+      "args": ["-y", "comment-scraper-mcp@0.1.0"]
+    }
+  }
+}
