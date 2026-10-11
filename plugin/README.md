@@ -12,7 +12,14 @@ Ask about the Reddit and Hacker News threads you exported with the [Comment Scra
 In Claude Code:
 
 ```
-/plugin install comment-scraper --marketplace supertj/comment-scraper-mcp
+/plugin marketplace add supertj/comment-scraper-mcp
+/plugin install comment-scraper@comment-scraper
+```
+
+Or from a terminal:
+
+```sh
+claude plugin install comment-scraper --marketplace supertj/comment-scraper-mcp
 ```
 
 ## What it runs
