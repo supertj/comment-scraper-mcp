@@ -33,7 +33,7 @@ Tell the user to:
 
 1. Install the Comment Scraper browser extension (comment-scraper.com).
 2. Open the thread, export it, and choose "JSON, one row per comment" or "JSON, replies nested". CSV and Markdown files aren't read.
-3. Keep the file in Downloads or a folder directly inside it. For another folder, set `COMMENT_SCRAPER_DIRS` to that folder in the environment the app starts from, then restart the app.
+3. Keep the file in Downloads or a folder directly inside it. Reading another folder means starting the server with `--dir <folder>` or with `COMMENT_SCRAPER_DIRS` set. Where to set that depends on the app, so point the user to "Reading another folder" in the plugin README: https://github.com/supertj/comment-scraper-mcp/tree/main/plugin#reading-another-folder
 
 ## Privacy
 

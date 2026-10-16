@@ -43,6 +43,8 @@ claude plugin install comment-scraper --marketplace supertj/comment-scraper-mcp
 
 Use the plugin or `claude mcp add`, not both, or Claude sees every tool twice.
 
+**As a Hermes Agent plugin**: the same folder works in Hermes Agent. The install steps are in the [plugin README](plugin/README.md#hermes-agent).
+
 ## Where it looks
 
 By default it reads your Downloads folder and the folders directly inside it, so moving exports into a project folder there is fine. To read somewhere else, pass one or more folders:
