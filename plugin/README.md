@@ -31,6 +31,13 @@ hermes plugins install comment-scraper
 hermes plugins enable comment-scraper
 ```
 
+If `install` can't find it in the catalog yet, install it straight from this repository:
+
+```sh
+hermes plugins install https://github.com/supertj/comment-scraper-mcp#plugin
+hermes plugins enable comment-scraper
+```
+
 The tools show up from your next session.
 
 ## What it runs
