@@ -1,6 +1,7 @@
 {
   "name": "comment-scraper-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "mcpName": "io.github.supertj/comment-scraper-mcp",
   "description": "Read your Comment Scraper exports (Reddit and Hacker News threads) from Claude and other MCP clients. Local and read-only.",
   "type": "module",
   "bin": {

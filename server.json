@@ -1,0 +1,31 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.supertj/comment-scraper-mcp",
+  "title": "Comment Scraper",
+  "description": "Read your Comment Scraper exports of Reddit and Hacker News threads. Local and read-only.",
+  "websiteUrl": "https://comment-scraper.com",
+  "repository": {
+    "url": "https://github.com/supertj/comment-scraper-mcp",
+    "source": "github"
+  },
+  "version": "0.1.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "comment-scraper-mcp",
+      "version": "0.1.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "COMMENT_SCRAPER_DIRS",
+          "description": "Folders to read exports from, separated by ':' (';' on Windows). Defaults to your Downloads folder and the folders directly inside it.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
