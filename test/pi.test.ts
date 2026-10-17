@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { delimiter, join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
@@ -30,14 +31,25 @@ describe("Pi package", () => {
     expect(config.exposure).toBe("direct");
   });
 
-  it("uses node from PATH when Pi is a Bun-compiled binary", () => {
+  it("uses an absolute node from PATH when Pi is a Bun-compiled binary", () => {
     // There process.execPath is the pi binary, and starting it with the server file starts another Pi.
     const versions = process.versions as Record<string, string | undefined>;
+    const path = process.env.PATH;
+    const bin = mkdtempSync(join(tmpdir(), "cs-pi-bin-"));
+    const node = join(bin, process.platform === "win32" ? "node.exe" : "node");
+    writeFileSync(node, "");
+    chmodSync(node, 0o755);
     versions.bun = "1.3.0";
     try {
-      expect(register()[1].command).toBe("node");
+      // A relative entry would be searched from the project Pi was opened in, so it's skipped.
+      process.env.PATH = ["relative-bin", bin].join(delimiter);
+      expect(register()[1].command).toBe(node);
+      process.env.PATH = "relative-bin";
+      expect(() => register()).toThrow("Node.js 20 or newer on PATH");
     } finally {
       delete versions.bun;
+      process.env.PATH = path;
+      rmSync(bin, { recursive: true, force: true });
     }
   });
 
