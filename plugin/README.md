@@ -53,6 +53,7 @@ It doesn't write, move or delete files, and it makes no network requests. It doe
 The server takes its folders from `--dir` (repeatable) or from `COMMENT_SCRAPER_DIRS` (folders separated by `:`, or `;` on Windows).
 
 - **Claude Code**: set `COMMENT_SCRAPER_DIRS` in the environment Claude Code starts from.
+- **Pi**: set `COMMENT_SCRAPER_DIRS` in the shell you start Pi from. Pi passes your environment on to the server.
 - **Hermes Agent**: Hermes passes only a few basic variables such as `PATH` and `HOME` to MCP servers, so `COMMENT_SCRAPER_DIRS` from your shell won't reach it. Add a server with the same name to your Hermes `config.yaml` instead. It takes the place of the plugin's entry:
 
 ```yaml

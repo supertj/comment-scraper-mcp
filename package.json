@@ -1,17 +1,27 @@
 {
   "name": "comment-scraper-mcp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "mcpName": "io.github.supertj/comment-scraper-mcp",
-  "description": "Read your Comment Scraper exports (Reddit and Hacker News threads) from Claude and other MCP clients. Local and read-only.",
+  "description": "Read your Comment Scraper exports (Reddit and Hacker News threads) from Claude, Pi and other MCP clients. Local and read-only.",
   "type": "module",
   "bin": {
     "comment-scraper-mcp": "dist/index.js"
   },
   "files": [
     "dist",
+    "pi",
+    "plugin/skills",
     "README.md",
     "LICENSE"
   ],
+  "pi": {
+    "extensions": [
+      "./pi/extension.js"
+    ],
+    "skills": [
+      "./plugin/skills"
+    ]
+  },
   "engines": {
     "node": ">=20"
   },
@@ -27,6 +37,7 @@
     "reddit",
     "hacker-news",
     "claude",
+    "pi-package",
     "comment-scraper"
   ],
   "homepage": "https://comment-scraper.com",
