@@ -7,7 +7,7 @@ import type { Library, LoadedThread } from "./library.js";
 // exactly as in the extension's Markdown export, so a quote Claude cites can be found in the
 // file the user downloaded.
 
-export const VERSION = "0.1.1";
+export const VERSION = "0.1.2";
 
 /** Keeps one tool result well inside what MCP clients accept (Claude Code warns above ~25k tokens). */
 const MAX_RESULT_CHARS = 60_000;

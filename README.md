@@ -45,6 +45,14 @@ Use the plugin or `claude mcp add`, not both, or Claude sees every tool twice.
 
 **As a Hermes Agent plugin**: the same folder works in Hermes Agent. The install steps are in the [plugin README](plugin/README.md#hermes-agent).
 
+**Pi**: this package is also a Pi package. Installing it gives Pi the server and the same skill the Claude plugin uses:
+
+```sh
+pi install npm:comment-scraper-mcp
+```
+
+Start a new Pi session and ask about your exports. Pi starts the server from the installed package, so nothing is downloaded at run time, and `/mcp` shows whether it connected. The tools appear as `mcp__comment_scraper__list_threads` and so on. You need Pi 0.99 or newer, the first version with MCP support. To read another folder, set `COMMENT_SCRAPER_DIRS` in the shell you start Pi from. If you already added `comment-scraper-mcp` to Pi's `mcp.json` by hand, remove that entry, unless it's named `comment-scraper`, in which case Pi uses it in place of the package's.
+
 ## Where it looks
 
 By default it reads your Downloads folder and the folders directly inside it, so moving exports into a project folder there is fine. To read somewhere else, pass one or more folders:
