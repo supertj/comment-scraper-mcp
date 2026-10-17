@@ -14,8 +14,12 @@ export default function commentScraper(pi) {
     throw new Error("comment-scraper-mcp needs Pi 0.99 or newer for MCP support. Run `pi update`.");
   }
   pi.registerMcpServer("comment-scraper", {
-    // Pi always runs on Node, and this is the Node running it, so PATH doesn't matter.
-    command: process.execPath,
+    // Pi installed from npm runs on Node, so its own executable is a Node that is known to work,
+    // even when no node is on PATH. Pi's release binaries are compiled with Bun instead, and there
+    // execPath is Pi itself: launching it with the server file starts another Pi, which loads this
+    // extension again. There we use node from PATH, which the README already asks for (Node 20+)
+    // and which Pi's default npm install of this package needs anyway.
+    command: process.versions.bun ? "node" : process.execPath,
     args: [serverPath],
     // Four small read-only tools: declaring them directly costs little and saves the model a
     // tool search before every question about an export.
