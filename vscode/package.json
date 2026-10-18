@@ -3,7 +3,7 @@
   "displayName": "Comment Scraper MCP",
   "description": "Ask VS Code chat about the Reddit and Hacker News threads you exported with Comment Scraper. Local and read-only.",
   "version": "0.1.0",
-  "publisher": "TODO-publisher",
+  "publisher": "comment-scraper",
   "license": "MIT",
   "icon": "icon.png",
   "homepage": "https://comment-scraper.com",
