@@ -1,0 +1,83 @@
+{
+  "name": "comment-scraper-mcp",
+  "displayName": "Comment Scraper MCP",
+  "description": "Ask VS Code chat about the Reddit and Hacker News threads you exported with Comment Scraper. Local and read-only.",
+  "version": "0.1.0",
+  "publisher": "comment-scraper",
+  "license": "MIT",
+  "icon": "icon.png",
+  "homepage": "https://comment-scraper.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/supertj/comment-scraper-mcp.git",
+    "directory": "vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/supertj/comment-scraper-mcp/issues",
+    "email": "hello@comment-scraper.com"
+  },
+  "engines": {
+    "vscode": "^1.101.0"
+  },
+  "categories": [
+    "AI",
+    "Chat"
+  ],
+  "keywords": [
+    "mcp",
+    "reddit",
+    "hacker news",
+    "comments",
+    "research",
+    "agent mode",
+    "comment scraper"
+  ],
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
+  "activationEvents": [
+    "onMcpCollection:commentScraper"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "commentScraper",
+        "label": "Comment Scraper"
+      }
+    ],
+    "configuration": {
+      "title": "Comment Scraper",
+      "properties": {
+        "commentScraper.exportFolders": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "machine",
+          "markdownDescription": "Folders to read Comment Scraper JSON exports from, as absolute paths or starting with `~`. Each folder and the folders directly inside it are read. Leave empty to read your Downloads folder."
+        }
+      }
+    }
+  },
+  "files": [
+    "extension.js",
+    "dist/server.mjs",
+    "dist/THIRD_PARTY_NOTICES.txt",
+    "icon.png",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node build.mjs && node test/run.mjs",
+    "package": "node build.mjs && npx -y @vscode/vsce@4.0.0 package"
+  },
+  "devDependencies": {
+    "comment-scraper-mcp": "0.1.2",
+    "esbuild": "0.28.2"
+  }
+}
