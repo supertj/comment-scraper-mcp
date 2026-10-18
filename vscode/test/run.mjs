@@ -5,7 +5,7 @@
 // `npm test -- <file.vsix>` runs the same checks on a packaged extension instead of this folder,
 // which catches a file the .vsix leaves out (needs unzip).
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -20,10 +20,12 @@ const sourceRoot = resolve(import.meta.dirname, "..");
 // to about 100 characters.
 const scratch = mkdtempSync(join(tmpdir(), "cs-vsc-"));
 const profile = join(scratch, "profile");
-// A space in the path checks that the folder reaches the server as one argument.
+// A space in the path checks that the folder reaches the server as one argument. The fixtures
+// are one flat export and one nested export in a subfolder, written by the extension's own
+// serialisers (see test/server.test.ts for the same threads).
 const exportsFolder = join(scratch, "my exports");
 mkdirSync(join(profile, "User"), { recursive: true });
-mkdirSync(exportsFolder);
+cpSync(join(sourceRoot, "test", "fixtures"), exportsFolder, { recursive: true });
 writeFileSync(join(profile, "User", "settings.json"), JSON.stringify({ "commentScraper.exportFolders": [exportsFolder] }));
 
 let extensionRoot = sourceRoot;

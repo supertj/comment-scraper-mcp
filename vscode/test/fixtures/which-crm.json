@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "exported_at": "2026-10-18T13:00:23.633Z",
+  "generator": "Comment Scraper",
+  "threads": [
+    {
+      "meta": {
+        "source": "reddit",
+        "thread_id": "crm1",
+        "thread_title": "Which CRM do small teams actually stick with?",
+        "permalink": "https://www.reddit.com/r/smallbusiness/comments/crm1/",
+        "fetch_path": "json",
+        "task_state": "all_known_fetched",
+        "stop_reason": null,
+        "fetched": 3,
+        "known_unfetched_at_least": 0,
+        "reported_by_source": 3,
+        "fetched_at": "2026-10-10T12:00:00.000Z"
+      },
+      "records": [
+        {
+          "schema_version": 1,
+          "source": "reddit",
+          "thread_id": "crm1",
+          "thread_title": "Which CRM do small teams actually stick with?",
+          "subreddit": "smallbusiness",
+          "score_hidden": false,
+          "edited_utc": null,
+          "is_op": false,
+          "comment_state": "normal",
+          "record_type": "post",
+          "comment_id": null,
+          "parent_id": null,
+          "depth": null,
+          "score": 50,
+          "created_utc": "2026-10-08T12:00:00.000Z",
+          "body": "Which CRM?\nWe are four people.",
+          "permalink": "https://www.reddit.com/r/smallbusiness/comments/crm1/"
+        },
+        {
+          "schema_version": 1,
+          "source": "reddit",
+          "thread_id": "crm1",
+          "thread_title": "Which CRM do small teams actually stick with?",
+          "subreddit": "smallbusiness",
+          "score_hidden": false,
+          "edited_utc": null,
+          "is_op": false,
+          "comment_state": "normal",
+          "record_type": "comment",
+          "comment_id": "a1",
+          "parent_id": "crm1",
+          "depth": 0,
+          "score": 214,
+          "created_utc": "2026-10-09T12:00:00.000Z",
+          "body": "We left our CRM after the renewal doubled.",
+          "permalink": "https://www.reddit.com/r/smallbusiness/comments/crm1/_/a1/"
+        },
+        {
+          "schema_version": 1,
+          "source": "reddit",
+          "thread_id": "crm1",
+          "thread_title": "Which CRM do small teams actually stick with?",
+          "subreddit": "smallbusiness",
+          "score_hidden": false,
+          "edited_utc": null,
+          "is_op": false,
+          "comment_state": "normal",
+          "record_type": "comment",
+          "comment_id": "a2",
+          "parent_id": "a1",
+          "depth": 1,
+          "score": 88,
+          "created_utc": "2026-10-09T12:00:00.000Z",
+          "body": "Ask for the year-two price in writing.",
+          "permalink": "https://www.reddit.com/r/smallbusiness/comments/crm1/_/a2/"
+        },
+        {
+          "schema_version": 1,
+          "source": "reddit",
+          "thread_id": "crm1",
+          "thread_title": "Which CRM do small teams actually stick with?",
+          "subreddit": "smallbusiness",
+          "score_hidden": false,
+          "edited_utc": null,
+          "is_op": false,
+          "comment_state": "normal",
+          "record_type": "comment",
+          "comment_id": "a3",
+          "parent_id": "crm1",
+          "depth": 0,
+          "score": 12,
+          "created_utc": "2026-10-09T12:00:00.000Z",
+          "body": "Email sync is what made us stay.",
+          "permalink": "https://www.reddit.com/r/smallbusiness/comments/crm1/_/a3/"
+        }
+      ]
+    }
+  ]
+}
