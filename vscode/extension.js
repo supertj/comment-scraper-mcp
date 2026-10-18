@@ -41,7 +41,10 @@ function serverDefinition(context) {
     // does nothing.
     process.execPath,
     [context.asAbsolutePath("dist/server.mjs"), ...dirArgs],
-    { ELECTRON_RUN_AS_NODE: "1" },
+    // The server also reads COMMENT_SCRAPER_DIRS, and VS Code passes the shell environment on.
+    // Someone who set it for Pi or Claude Code would otherwise get those folders here even with
+    // the setting empty, so the setting stays the only place that decides what VS Code reads.
+    { ELECTRON_RUN_AS_NODE: "1", COMMENT_SCRAPER_DIRS: null },
     // Cached tool lists are tied to this; it changes only when a new build of the extension
     // (and so of the bundled server) is installed.
     context.extension.packageJSON.version,

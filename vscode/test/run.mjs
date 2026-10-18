@@ -45,7 +45,8 @@ const run = spawnSync(
     `--extensionDevelopmentPath=${extensionRoot}`,
     `--extensionTestsPath=${join(sourceRoot, "test", "suite.cjs")}`,
   ],
-  { stdio: "inherit" },
+  // Set the way a shell profile might set it for Pi or Claude Code; the extension must ignore it.
+  { stdio: "inherit", env: { ...process.env, COMMENT_SCRAPER_DIRS: join(scratch, "from env") } },
 );
 rmSync(scratch, { recursive: true, force: true });
 if (run.error) throw run.error;

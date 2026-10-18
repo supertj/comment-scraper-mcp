@@ -43,11 +43,11 @@ To read somewhere else, set `commentScraper.exportFolders` in your user settings
 "commentScraper.exportFolders": ["~/Research/reddit"]
 ```
 
-Use full paths or paths starting with `~`. Each folder and the folders directly inside it are read. When you change the setting, VS Code stops the server and starts it again with the new folders the next time chat uses one of the tools.
+Use full paths or paths starting with `~`. Each folder and the folders directly inside it are read. When you change the setting, VS Code stops the server and starts it again with the new folders the next time chat uses one of the tools. If you set `COMMENT_SCRAPER_DIRS` for another app, VS Code ignores it; only this setting counts here.
 
 ## Privacy
 
-The server reads JSON files in the folders above and nothing else. It doesn't write, move or delete files, and it doesn't connect to the internet. What you ask in chat, and the comments chat reads through these tools, go to the model provider VS Code chat is using, under their terms. Exports from the extension don't contain usernames.
+The server reads JSON files in the folders above and nothing else. It doesn't write, move or delete files, and it doesn't connect to the internet. What you ask in chat, and the comments chat reads through these tools, go to the model provider VS Code chat is using, under their terms. Exports from the extension don't include usernames, though comment text can still mention people by name.
 
 ## Other apps
 
