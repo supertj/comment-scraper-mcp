@@ -4,7 +4,7 @@
     "comment-scraper": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "comment-scraper-mcp@0.1.0"]
+      "args": ["-y", "comment-scraper-mcp@0.1.3"]
     }
   }
 }

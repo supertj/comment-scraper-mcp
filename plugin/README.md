@@ -42,7 +42,7 @@ The tools show up from your next session.
 
 ## What it runs
 
-When the plugin starts, the app runs `npx -y comment-scraper-mcp@0.1.0`. The first time, npx downloads that exact version of the `comment-scraper-mcp` package from npm; after that it starts from the local cache. The server's source is in this repository. It runs as a local process while the app is open.
+When the plugin starts, the app runs `npx -y comment-scraper-mcp@0.1.3`. The first time, npx downloads that exact version of the `comment-scraper-mcp` package from npm; after that it starts from the local cache. The server's source is in this repository. It runs as a local process while the app is open.
 
 The server reads JSON exports in your Downloads folder and the folders directly inside it. It recognises them by their content, so renamed files are fine.
 
@@ -60,7 +60,7 @@ The server takes its folders from `--dir` (repeatable) or from `COMMENT_SCRAPER_
 mcp_servers:
   comment-scraper:
     command: npx
-    args: ["-y", "comment-scraper-mcp@0.1.0", "--dir", "~/Research/reddit"]
+    args: ["-y", "comment-scraper-mcp@0.1.3", "--dir", "~/Research/reddit"]
 ```
 
 ## Things to ask
