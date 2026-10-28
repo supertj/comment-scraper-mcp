@@ -7,9 +7,12 @@ import type { Library, LoadedThread } from "./library.js";
 // exactly as in the extension's Markdown export, so a quote Claude cites can be found in the
 // file the user downloaded.
 
-export const VERSION = "0.1.2";
+export const VERSION = "0.1.3";
 
-/** Keeps one tool result well inside what MCP clients accept (Claude Code warns above ~25k tokens). */
+// Character budget for one tool result. Claude Code's docs ("MCP output limits and warnings")
+// say it warns above 10,000 tokens, caps output at 25,000 tokens by default, and saves a text
+// result longer than 50,000 characters to a file instead of showing it inline. 60,000 is over
+// that last mark, so a full page reaches Claude Code as a file it has to open.
 const MAX_RESULT_CHARS = 60_000;
 const READ_LIMIT_DEFAULT = 200;
 const READ_LIMIT_MAX = 500;
@@ -50,6 +53,37 @@ function countsLine(thread: LoadedThread): string {
   const reported = report.reported === null ? `${sourceLabel(thread.source)} doesn't report a total` : `${report.reported} reported by ${sourceLabel(thread.source)}`;
   return `${report.fetched} fetched, at least ${report.knownUnfetched} known but not fetched, ${reported}; ${describeStatus(report)}`;
 }
+
+/**
+ * The line after the last comment. A partial export ends before the thread does, and a model
+ * told "that's the end of the thread" answers as if it had read every reply, so an incomplete
+ * export says how far it falls short, using only the numbers in the file.
+ */
+function endOfExport(thread: LoadedThread, all: ExportRecord[]): string {
+  const { report } = thread;
+  const source = sourceLabel(thread.source);
+  const inExport = all.length;
+  const shortBy = report.reported === null ? 0 : report.reported - inExport;
+  const orphans = all.filter((record) => record.parent_missing === true).length;
+  const stoppedEarly = report.status !== "all_known_fetched";
+  if (!stoppedEarly && shortBy <= 0 && orphans === 0 && report.knownUnfetched === 0) return "That's the end of the export.";
+
+  // The source's total and the known-but-unfetched count are separate measurements that can
+  // disagree, so both are given, never one in place of the other.
+  const notes = [
+    "That's the end of the export, not of the thread.",
+    report.reported === null
+      ? `${source} doesn't report a total; this export has ${commentCount(inExport)}.`
+      : `${source} reports ${commentCount(report.reported)} and this export has ${inExport}${shortBy > 0 ? `, so it's missing ${shortBy} by that count` : ""}.`,
+  ];
+  if (report.knownUnfetched > 0) notes.push(`At least ${commentCount(report.knownUnfetched)} ${report.knownUnfetched === 1 ? "is" : "are"} known but not fetched.`);
+  else if (report.reported === null) notes.push("How many are missing isn't known.");
+  if (stoppedEarly) notes.push(`Fetch status: ${describeStatus(report)}.`);
+  if (orphans) notes.push(`${commentCount(orphans)} here ${orphans === 1 ? "replies" : "reply"} to a comment that isn't in the export.`);
+  return notes.join(" ");
+}
+
+const commentCount = (count: number) => `${count} comment${count === 1 ? "" : "s"}`;
 
 function noExportsMessage(library: Library): string {
   return [
@@ -163,7 +197,7 @@ export function createServer(library: Library): McpServer {
       lines.push(
         index < pool.length
           ? `Showing comments ${offset + 1}–${index} of ${pool.length}${filterNote}. Call read_thread again with offset=${index} for more.`
-          : `Showing comments ${Math.min(offset + 1, pool.length)}–${pool.length} of ${pool.length}${filterNote}. That's the end of the thread.`,
+          : `Showing comments ${Math.min(offset + 1, pool.length)}–${pool.length} of ${pool.length}${filterNote}. ${endOfExport(thread, all)}`,
       );
       return text(lines.join("\n"));
     },
