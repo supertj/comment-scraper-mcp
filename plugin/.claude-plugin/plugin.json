@@ -1,7 +1,7 @@
 {
   "name": "comment-scraper",
   "displayName": "Comment Scraper",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Ask about the Reddit and Hacker News threads you exported with Comment Scraper: list, read, search and quote them by comment number. Local and read-only.",
   "author": {
     "name": "Comment Scraper",
