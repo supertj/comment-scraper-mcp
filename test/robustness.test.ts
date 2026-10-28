@@ -88,7 +88,8 @@ describe("robustness", () => {
       await call("search_comments", { query: "renewal", limit: 100 }),
       await call("get_comment", { thread: "reddit:big", comment: "c1" }),
     ];
-    for (const result of results) expect(result.length).toBeLessThan(62_000);
+    // Claude Code saves a result over 50,000 characters to a file instead of showing it inline.
+    for (const result of results) expect(result.length).toBeLessThan(50_000);
     expect(results[0]).toContain("more threads not shown");
     expect(results[1]).toContain("Call read_thread again with offset=");
     expect(results[2]).toContain("more matches not shown");
