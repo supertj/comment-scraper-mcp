@@ -182,6 +182,19 @@ describe("the end of an incomplete export", () => {
     ]),
     { status: "limit_reached", stopReason: "comment_limit", reported: null, knownUnfetched: 4 },
   );
+  // A source total that lags behind what the fetch found must not hide the known-unfetched count.
+  const staleTotal = withReport(
+    thread("stale1", "Thread with a stale total", [
+      ["t1", null, 3, "One."],
+      ["t2", null, 2, "Two."],
+      ["t3", null, 1, "Three."],
+    ]),
+    { status: "partial", stopReason: "timeout", reported: 4, knownUnfetched: 5 },
+  );
+  const unknownGap = withReport(
+    thread("unknown1", "Thread with no total and nothing counted", [["u1", null, 3, "One."]]),
+    { status: "partial", stopReason: "network_error", reported: null },
+  );
   const orphanBase = thread("orph1", "Thread with a missing parent", [
     ["o1", null, 5, "Top level."],
     ["o2", "gone1", 2, "Replying to something that wasn't fetched."],
@@ -199,6 +212,8 @@ describe("the end of an incomplete export", () => {
     writeFileSync(join(folder, "short.json"), toFlatJson([short]));
     writeFileSync(join(folder, "no-total.json"), toFlatJson([noTotal]));
     writeFileSync(join(folder, "orphan.json"), toNestedJson([orphan]));
+    writeFileSync(join(folder, "stale.json"), toFlatJson([staleTotal]));
+    writeFileSync(join(folder, "unknown.json"), toFlatJson([unknownGap]));
     reader = await clientFor(folder);
   });
   afterAll(() => rmSync(folder, { recursive: true, force: true }));
@@ -206,20 +221,35 @@ describe("the end of an incomplete export", () => {
   it("says how many comments a partial export is missing", async () => {
     const { text } = await call("read_thread", { thread: "reddit:part1" }, reader);
     expect(text).toContain(
-      "Showing comments 1–3 of 3. That's the end of the export, not of the thread. Reddit reports 20 comments and this export has 3, so it's missing 17. Fetch status: partial (rate_limited).",
+      "Showing comments 1–3 of 3. That's the end of the export, not of the thread. Reddit reports 20 comments and this export has 3, so it's missing 17 by that count. At least 5 comments are known but not fetched. Fetch status: partial (rate_limited).",
     );
   });
 
   it("flags an export with fewer comments than the source reports, even when nothing was left unfetched", async () => {
     const { text } = await call("read_thread", { thread: "reddit:short1" }, reader);
-    expect(text).toContain("That's the end of the export, not of the thread. Reddit reports 6 comments and this export has 2, so it's missing 4.");
+    expect(text).toContain("That's the end of the export, not of the thread. Reddit reports 6 comments and this export has 2, so it's missing 4 by that count.");
+    expect(text).not.toContain("known but not fetched.");
     expect(text).not.toContain("Fetch status");
   });
 
   it("falls back to the known-but-unfetched count when the source reports no total", async () => {
     const { text } = await call("read_thread", { thread: "reddit:nototal1" }, reader);
     expect(text).toContain(
-      "That's the end of the export, not of the thread. Reddit doesn't report a total; this export has 2 comments, with at least 4 more known but not fetched. Fetch status: stopped at plan limit (comment_limit).",
+      "That's the end of the export, not of the thread. Reddit doesn't report a total; this export has 2 comments. At least 4 comments are known but not fetched. Fetch status: stopped at plan limit (comment_limit).",
+    );
+  });
+
+  it("keeps the known-but-unfetched count when the source's total is lower", async () => {
+    const { text } = await call("read_thread", { thread: "reddit:stale1" }, reader);
+    expect(text).toContain(
+      "Reddit reports 4 comments and this export has 3, so it's missing 1 by that count. At least 5 comments are known but not fetched. Fetch status: partial (timeout).",
+    );
+  });
+
+  it("says the gap is unknown when there is neither a total nor a known-unfetched count", async () => {
+    const { text } = await call("read_thread", { thread: "reddit:unknown1" }, reader);
+    expect(text).toContain(
+      "That's the end of the export, not of the thread. Reddit doesn't report a total; this export has 1 comment. How many are missing isn't known. Fetch status: partial (network_error).",
     );
   });
 
@@ -227,7 +257,7 @@ describe("the end of an incomplete export", () => {
     const { text } = await call("read_thread", { thread: "reddit:orph1" }, reader);
     expect(text).toContain("[c2] reply to a comment not fetched");
     expect(text).toContain(
-      "That's the end of the export, not of the thread. Reddit reports 2 comments; this export has 2 comments. 1 comment here replies to a comment that isn't in the export.",
+      "That's the end of the export, not of the thread. Reddit reports 2 comments and this export has 2. 1 comment here replies to a comment that isn't in the export.",
     );
   });
 

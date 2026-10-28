@@ -68,12 +68,16 @@ function endOfExport(thread: LoadedThread, all: ExportRecord[]): string {
   const stoppedEarly = report.status !== "all_known_fetched";
   if (!stoppedEarly && shortBy <= 0 && orphans === 0 && report.knownUnfetched === 0) return "That's the end of the export.";
 
-  const total = report.reported === null ? `${source} doesn't report a total` : `${source} reports ${commentCount(report.reported)}`;
-  const counts =
-    shortBy > 0
-      ? `${total} and this export has ${inExport}, so it's missing ${shortBy}.`
-      : `${total}; this export has ${commentCount(inExport)}${report.knownUnfetched > 0 ? `, with at least ${report.knownUnfetched} more known but not fetched` : ""}.`;
-  const notes = ["That's the end of the export, not of the thread.", counts];
+  // The source's total and the known-but-unfetched count are separate measurements that can
+  // disagree, so both are given, never one in place of the other.
+  const notes = [
+    "That's the end of the export, not of the thread.",
+    report.reported === null
+      ? `${source} doesn't report a total; this export has ${commentCount(inExport)}.`
+      : `${source} reports ${commentCount(report.reported)} and this export has ${inExport}${shortBy > 0 ? `, so it's missing ${shortBy} by that count` : ""}.`,
+  ];
+  if (report.knownUnfetched > 0) notes.push(`At least ${commentCount(report.knownUnfetched)} ${report.knownUnfetched === 1 ? "is" : "are"} known but not fetched.`);
+  else if (report.reported === null) notes.push("How many are missing isn't known.");
   if (stoppedEarly) notes.push(`Fetch status: ${describeStatus(report)}.`);
   if (orphans) notes.push(`${commentCount(orphans)} here ${orphans === 1 ? "replies" : "reply"} to a comment that isn't in the export.`);
   return notes.join(" ");
