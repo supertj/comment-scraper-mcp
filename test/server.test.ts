@@ -51,9 +51,18 @@ const crmOlder = thread("crm1", "Which CRM do small teams actually stick with?",
 let dir: string;
 let client: Client;
 
-async function call(name: string, args: Record<string, unknown> = {}) {
-  const result = (await client.callTool({ name, arguments: args })) as { content: Array<{ text: string }>; isError?: boolean };
+async function call(name: string, args: Record<string, unknown> = {}, on: Client = client) {
+  const result = (await on.callTool({ name, arguments: args })) as { content: Array<{ text: string }>; isError?: boolean };
   return { text: result.content[0]!.text, isError: Boolean(result.isError) };
+}
+
+async function clientFor(folder: string): Promise<Client> {
+  const server = createServer(new Library([folder]));
+  const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+  await server.connect(serverSide);
+  const connected = new Client({ name: "test", version: "1.0.0" });
+  await connected.connect(clientSide);
+  return connected;
 }
 
 beforeAll(async () => {
@@ -64,11 +73,7 @@ beforeAll(async () => {
   writeFileSync(join(dir, "which-crm-old.json"), toFlatJson([crmOlder]));
   writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "not-an-export" }));
   writeFileSync(join(dir, "broken.json"), '{"schema_version": 1, "generator": "Comment Scraper", "threads": [');
-  const server = createServer(new Library([dir]));
-  const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
-  await server.connect(serverSide);
-  client = new Client({ name: "test", version: "1.0.0" });
-  await client.connect(clientSide);
+  client = await clientFor(dir);
 });
 
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -97,7 +102,9 @@ describe("comment-scraper-mcp", () => {
       expect(markdown).toContain(line);
     }
     expect(text).toContain("\\# Which CRM?");
-    expect(text).toContain("That's the end of the thread.");
+    expect(text).toContain("Showing comments 1–4 of 4. That's the end of the export.");
+    expect(text).not.toContain("end of the thread");
+    expect(text).not.toContain("not of the thread");
   });
 
   it("pages long threads and filters by score", async () => {
@@ -147,5 +154,86 @@ describe("comment-scraper-mcp", () => {
     expect(result.content[0]!.text).toContain("No Comment Scraper exports found");
     expect(result.content[0]!.text).toContain("--dir");
     rmSync(empty, { recursive: true, force: true });
+  });
+});
+
+// The last page must not let a model think it has read the whole thread when the export stops short.
+describe("the end of an incomplete export", () => {
+  const withReport = (base: ReturnType<typeof thread>, report: Partial<FetchReport>) => ({ ...base, report: { ...base.report, ...report } });
+  const partial = withReport(
+    thread("part1", "Partial thread", [
+      ["p1", null, 9, "First."],
+      ["p2", "p1", 4, "Second."],
+      ["p3", null, 2, "Third."],
+    ]),
+    { status: "partial", stopReason: "rate_limited", reported: 20, knownUnfetched: 5 },
+  );
+  const short = withReport(
+    thread("short1", "Short thread", [
+      ["s1", null, 3, "One."],
+      ["s2", null, 1, "Two."],
+    ]),
+    { reported: 6 },
+  );
+  const noTotal = withReport(
+    thread("nototal1", "Thread without a total", [
+      ["n1", null, 3, "One."],
+      ["n2", null, 1, "Two."],
+    ]),
+    { status: "limit_reached", stopReason: "comment_limit", reported: null, knownUnfetched: 4 },
+  );
+  const orphanBase = thread("orph1", "Thread with a missing parent", [
+    ["o1", null, 5, "Top level."],
+    ["o2", "gone1", 2, "Replying to something that wasn't fetched."],
+  ]);
+  const orphan = {
+    ...orphanBase,
+    records: orphanBase.records.map((record) => (record.comment_id === "o2" ? { ...record, parent_missing: true as const } : record)),
+  };
+
+  let folder: string;
+  let reader: Client;
+  beforeAll(async () => {
+    folder = mkdtempSync(join(tmpdir(), "cs-mcp-partial-"));
+    writeFileSync(join(folder, "partial.json"), toFlatJson([partial]));
+    writeFileSync(join(folder, "short.json"), toFlatJson([short]));
+    writeFileSync(join(folder, "no-total.json"), toFlatJson([noTotal]));
+    writeFileSync(join(folder, "orphan.json"), toNestedJson([orphan]));
+    reader = await clientFor(folder);
+  });
+  afterAll(() => rmSync(folder, { recursive: true, force: true }));
+
+  it("says how many comments a partial export is missing", async () => {
+    const { text } = await call("read_thread", { thread: "reddit:part1" }, reader);
+    expect(text).toContain(
+      "Showing comments 1–3 of 3. That's the end of the export, not of the thread. Reddit reports 20 comments and this export has 3, so it's missing 17. Fetch status: partial (rate_limited).",
+    );
+  });
+
+  it("flags an export with fewer comments than the source reports, even when nothing was left unfetched", async () => {
+    const { text } = await call("read_thread", { thread: "reddit:short1" }, reader);
+    expect(text).toContain("That's the end of the export, not of the thread. Reddit reports 6 comments and this export has 2, so it's missing 4.");
+    expect(text).not.toContain("Fetch status");
+  });
+
+  it("falls back to the known-but-unfetched count when the source reports no total", async () => {
+    const { text } = await call("read_thread", { thread: "reddit:nototal1" }, reader);
+    expect(text).toContain(
+      "That's the end of the export, not of the thread. Reddit doesn't report a total; this export has 2 comments, with at least 4 more known but not fetched. Fetch status: stopped at plan limit (comment_limit).",
+    );
+  });
+
+  it("flags comments whose parent isn't in the export", async () => {
+    const { text } = await call("read_thread", { thread: "reddit:orph1" }, reader);
+    expect(text).toContain("[c2] reply to a comment not fetched");
+    expect(text).toContain(
+      "That's the end of the export, not of the thread. Reddit reports 2 comments; this export has 2 comments. 1 comment here replies to a comment that isn't in the export.",
+    );
+  });
+
+  it("keeps the paging hint on earlier pages", async () => {
+    const { text } = await call("read_thread", { thread: "reddit:part1", limit: 2 }, reader);
+    expect(text).toContain("Showing comments 1–2 of 3. Call read_thread again with offset=2 for more.");
+    expect(text).not.toContain("end of the export");
   });
 });
