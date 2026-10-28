@@ -11,9 +11,9 @@ export const VERSION = "0.1.3";
 
 // Character budget for one tool result. Claude Code's docs ("MCP output limits and warnings")
 // say it warns above 10,000 tokens, caps output at 25,000 tokens by default, and saves a text
-// result longer than 50,000 characters to a file instead of showing it inline. 60,000 is over
-// that last mark, so a full page reaches Claude Code as a file it has to open.
-const MAX_RESULT_CHARS = 60_000;
+// result longer than 50,000 characters to a file instead of showing it inline. 45,000 leaves
+// room for the page footer, so a full page still comes back inline.
+const MAX_RESULT_CHARS = 45_000;
 const READ_LIMIT_DEFAULT = 200;
 const READ_LIMIT_MAX = 500;
 const SEARCH_LIMIT_DEFAULT = 30;
